@@ -47,7 +47,7 @@ python3 ow_to_be_a_hero_fight.py -i teams.json -r
 to additionally add new characters manually, and save the new json file to teams_new.json, use
 
 ```bash
-python3 ow_to_be_a_hero_fight.py -i teams.json o teams_new.json -r
+python3 ow_to_be_a_hero_fight.py -i teams.json -o teams_new.json -r
 ```
 
 ## Using the program
