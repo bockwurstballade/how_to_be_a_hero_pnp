@@ -1,6 +1,8 @@
 # Combat Handler for Pen-and-Paper RPGs
 
-Welcome to the **Combat Handler for Pen-and-Paper RPGs**! This Python program assists in managing combat scenarios for tabletop role-playing games. It handles character and team creation, initiative determination, turn-based combat mechanics, and an optional armor degradation feature triggered by critical hits.
+Welcome to the **How To Be A Hero Combat Handler**! This Python program assists in managing combat scenarios for tabletop role-playing games under the HTBAH rule set. It handles character and team creation, initiative determination, turn-based combat mechanics, and an optional armor degradation feature triggered by critical hits.
+
+[Official How To Be A Hero Ruleset](https://howtobeahero.de/index.php/Kampf){.external}
 
 ---
 
