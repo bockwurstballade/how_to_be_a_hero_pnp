@@ -2,7 +2,14 @@
 
 Welcome to the **How To Be A Hero Combat Handler**! This Python program assists in managing combat scenarios for tabletop role-playing games under the HTBAH rule set. It handles character and team creation, initiative determination, turn-based combat mechanics, and an optional armor degradation feature triggered by critical hits.
 
-[Official How To Be A Hero Ruleset](https://howtobeahero.de/index.php/Kampf){.external}
+[Official How To Be A Hero Ruleset](https://howtobeahero.de/index.php/Kampf)
+
+Supported Modules:
+* [Damage Factor](https://howtobeahero.de/index.php/Kampfsystem_Extension_(Neuzeit))
+* [Detailed categorization of rolls](https://howtobeahero.de/index.php/Genauere_Einteilung_von_Proben)
+* [Unconsciousness](https://howtobeahero.de/index.php/Lebenspunkte/de)
+* [Armor](https://howtobeahero.de/index.php/R%C3%BCstung)
+
 
 ---
 
