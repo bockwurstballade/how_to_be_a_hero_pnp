@@ -99,7 +99,18 @@ If an output file is specified, updated team data (hit points, armor condition, 
 
 ## Modes
 
+### Damage Types
+
+Enabled with the -d or --damage-type flag.
+
+In this mode:
+* Damage is multiplied based on the difference between the players dice roll and their skilled attack attribute valued
+* difference <= 10: You only graze the enemy. Base damage is multiplied by 0.75
+* difference >=60: Critical hit. Base Damage is multiplied by 1.15
+* Everything in-between: Normal hit. No additional multiplier
+
 ### Armor Degradation
+
 Enabled with the -r or --break-armor flag.
 
 In this mode:
