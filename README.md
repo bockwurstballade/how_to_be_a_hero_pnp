@@ -1,4 +1,4 @@
-# Combat Handler for Pen-and-Paper RPGs
+# How To Be A Hero Combat Handler
 
 Welcome to the **How To Be A Hero Combat Handler**! This Python program assists in managing combat scenarios for tabletop role-playing games under the HTBAH rule set. It handles character and team creation, initiative determination, turn-based combat mechanics, and an optional armor degradation feature triggered by critical hits.
 
@@ -53,13 +53,19 @@ python3 how_to_be_a_hero_fight.py [options]
 To load teams from .json file and enable armor degeneration, use
 
 ```bash
-python3 ow_to_be_a_hero_fight.py -i teams.json -r
+python3 how_to_be_a_hero_fight.py -i teams.json -r
 ```
 
 to additionally add new characters manually, and save the new json file to teams_new.json, use
 
 ```bash
-python3 ow_to_be_a_hero_fight.py -i teams.json -o teams_new.json -r
+python3 how_to_be_a_hero_fight.py -i teams.json -o teams_new.json -r
+```
+
+To activate both armor degeneration and damage factors, log all events to an exteranl log file and write out the current state to a JSON after every turn, use
+
+```bash
+python3 how_to_be_a_hero_fight.py -i teams.json -z current-state.json -l fight.log -rd
 ```
 
 ## Using the program
