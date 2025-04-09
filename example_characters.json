@@ -1,0 +1,125 @@
+[
+    {
+        "name": "Überlebende",
+        "charaktere": [
+            {
+                "name": "Amber",
+                "lebenspunkte": 100,
+                "rustungswert": 1,
+                "rustungszustand": 1,
+                "max_ignorierte_augenpaare": 1,
+                "handeln": 3,
+                "parade": 3,
+                "ist_nsc": false,
+                "ist_bewusstlos": false,
+                "ist_tot": false
+            },
+            {
+                "name": "Charlotte",
+                "lebenspunkte": 100,
+                "rustungswert": 0,
+                "rustungszustand": 0,
+                "max_ignorierte_augenpaare": 0,
+                "handeln": 2,
+                "parade": 2,
+                "ist_nsc": false,
+                "ist_bewusstlos": false,
+                "ist_tot": false
+            },
+            {
+                "name": "Maya",
+                "lebenspunkte": 100,
+                "rustungswert": 4,
+                "rustungszustand": 3,
+                "max_ignorierte_augenpaare": 2,
+                "handeln": 4,
+                "parade": 4,
+                "ist_nsc": false,
+                "ist_bewusstlos": false,
+                "ist_tot": false
+            },
+            {
+                "name": "Dr. Reiner Hengst",
+                "lebenspunkte": 100,
+                "rustungswert": 0,
+                "rustungszustand": 0,
+                "max_ignorierte_augenpaare": 0,
+                "handeln": 3,
+                "parade": 3,
+                "ist_nsc": false,
+                "ist_bewusstlos": false,
+                "ist_tot": false
+            }
+        ]
+    },
+    {
+        "name": "Soldate",
+        "charaktere": [
+            {
+                "name": "Soldat 1",
+                "lebenspunkte": 100,
+                "rustungswert": 3,
+                "rustungszustand": 3,
+                "max_ignorierte_augenpaare": 2,
+                "handeln": 3,
+                "parade": 3,
+                "ist_nsc": true,
+                "ist_bewusstlos": false,
+                "ist_tot": false
+            },
+            {
+                "name": "Soldat 2",
+                "lebenspunkte": 100,
+                "rustungswert": 3,
+                "rustungszustand": 3,
+                "max_ignorierte_augenpaare": 2,
+                "handeln": 3,
+                "parade": 3,
+                "ist_nsc": true,
+                "ist_bewusstlos": true,
+                "ist_tot": false
+            }
+        ]
+    },
+    {
+        "name": "Zombies",
+        "charaktere": [
+            {
+                "name": "Zombie 1",
+                "lebenspunkte": 100,
+                "rustungswert": 0,
+                "rustungszustand": 0,
+                "max_ignorierte_augenpaare": 0,
+                "handeln": 2,
+                "parade": 2,
+                "ist_nsc": true,
+                "ist_bewusstlos": false,
+                "ist_tot": false
+            },
+            {
+                "name": "Zombie 2",
+                "lebenspunkte": 100,
+                "rustungswert": 0,
+                "rustungszustand": 0,
+                "max_ignorierte_augenpaare": 0,
+                "handeln": 2,
+                "parade": 2,
+                "ist_nsc": true,
+                "ist_bewusstlos": false,
+                "ist_tot": false
+            },
+            {
+                "name": "Zombie 3",
+                "lebenspunkte": 100,
+                "rustungswert": 0,
+                "rustungszustand": 0,
+                "max_ignorierte_augenpaare": 0,
+                "handeln": 3,
+                "parade": 2,
+                "ist_nsc": true,
+                "ist_bewusstlos": false,
+                "ist_tot": false
+            }
+        ]
+    }
+]

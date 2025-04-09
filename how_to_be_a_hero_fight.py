@@ -12,22 +12,35 @@ def charakter_eingeben(team_name):
     print(f"\nCharakter für Team '{team_name}' eingeben:")
     name = input("Name des Charakters: ")
     lebenspunkte = int(input("Lebenspunkte zum Kampfbeginn: "))
-    
-    # Rüstungswerte
+
+    # Rüstungswert
     rustungswert = int(input("Rüstungswert (0-9): "))
     while rustungswert < 0 or rustungswert > 9:
         print("Rüstungswert muss zwischen 0 und 9 liegen!")
         rustungswert = int(input("Rüstungswert (0-9): "))
-    
+
+    # Rüstungszustand
+    rustungszustand_input = input("Aktueller Rüstungszustand (Enter für Rüstungswert): ")
+    if rustungszustand_input == "":
+        rustungszustand = rustungswert
+    else:
+        rustungszustand = int(rustungszustand_input)
+        while rustungszustand < 0 or rustungszustand > 9 or rustungszustand > rustungswert:
+            if rustungszustand < 0 or rustungszustand > 9:
+                print("Rüstungszustand muss zwischen 0 und 9 liegen!")
+            elif rustungszustand > rustungswert:
+                print("Rüstungszustand kann nicht größer als der Rüstungswert sein!")
+            rustungszustand = int(input("Aktueller Rüstungszustand (0-9): "))
+
     max_ignorierte_augenpaare = int(input("Maximale Anzahl ignorierter Augenpaare: "))
-    
+
     # Handeln-Wert
     handeln = int(input("Handeln-Wert: "))
-    
+
     # Parade-Wert (optional, standardmäßig Handeln-Wert)
     parade_input = input("Parade-Wert (Enter für Handeln-Wert): ")
     parade = handeln if parade_input == "" else int(parade_input)
-    
+
     # NSC-Status
     nsc_input = input("Ist dies ein NSC? (ja/nein): ").lower()
     ist_nsc = True if nsc_input == "ja" else False
@@ -35,11 +48,12 @@ def charakter_eingeben(team_name):
     # Bewusstlosigkeit
     bewusstlos_input = input(f"Ist {name} zu Beginn bewusstlos? (ja/nein): ").lower()
     ist_bewusstlos = True if bewusstlos_input == "ja" else False    
-    
+
     return {
         "name": name,
         "lebenspunkte": lebenspunkte,
         "rustungswert": rustungswert,
+        "rustungszustand": rustungszustand,
         "max_ignorierte_augenpaare": max_ignorierte_augenpaare,
         "handeln": handeln,
         "parade": parade,
@@ -230,7 +244,7 @@ def finale_ausgabe(teams):
         print(f"\nTeam '{team['name']}':")
         for char in team["charaktere"]:
             status = "tot" if char["ist_tot"] else ("bewusstlos" if char["ist_bewusstlos"] else "bei Bewusstsein")
-            print(f"  {char['name']}: {char['lebenspunkte']} Lebenspunkte, {status}")
+            print(f"  {char['name']}: {char['lebenspunkte']} Lebenspunkte, {char['rustungszustand']} Rüstungszustand, {status}")
 
 # Funktion für die Kampfmechanik
 def kampf_runden(zugreihenfolge, überraschte_charaktere):
@@ -345,7 +359,7 @@ def kampf_runden(zugreihenfolge, überraschte_charaktere):
             
             elif ergebnis == "kritischer Erfolg":
                 print("Kritischer Erfolg: Keine Parade möglich!")
-            
+
             # Schadensberechnung, falls Angriff erfolgreich und nicht pariert
             if ergebnis in ["normaler Erfolg", "guter Erfolg", "sehr guter Erfolg", "kritischer Erfolg"] and not parade_erfolgreich:
                 while True:
@@ -385,17 +399,25 @@ def kampf_runden(zugreihenfolge, überraschte_charaktere):
                 base_schaden = sum(schadenswürfel) + schadensbonus
                 schaden_mit_faktor = base_schaden * schaden_faktor
                 
+                # Rüstungszustand mildern bei kritischem Erfolg
+                if ergebnis == "kritischer Erfolg":
+                    verteidiger["rustungszustand"] = max(0, verteidiger["rustungszustand"] - 1)
+                    print(f"Die Rüstung von {verteidiger['name']} wurde beschädigt! Neuer Rüstungszustand: {verteidiger['rustungszustand']}")
+
                 # Rüstungswert anwenden
                 verteidiger = finde_verteidiger(teams, ziel_name, ziel_team)
                 rustungswert = verteidiger["rustungswert"]
+                rustungszustand = verteidiger["rustungszustand"]
                 max_ignorierte = verteidiger["max_ignorierte_augenpaare"]
                 
-                ignorierte_würfel = [w for w in schadenswürfel if w <= rustungswert][:max_ignorierte]
+                ignorierte_würfel = [w for w in schadenswürfel if w <= rustungszustand][:max_ignorierte]
                 effektiver_schaden = sum(w for w in schadenswürfel if w not in ignorierte_würfel) + schadensbonus
                 finaler_schaden = int(effektiver_schaden * schaden_faktor)
                 print(f"Lebenspunkte von {verteidiger['name']} Zu Beginn: {verteidiger['lebenspunkte']}")
+                print(f"Rüstungszustand von {verteidiger['name']} Zu Beginn: {verteidiger['rustungszustand']}")
                 verteidiger["lebenspunkte"] -= finaler_schaden
                 print(f"{verteidiger['name']} hat {verteidiger['lebenspunkte']} Lebenspunkte am Zugende.")
+                print(f"{verteidiger['name']} hat {verteidiger['rustungszustand']} Rüstungszustand am Zugende.")
 
                 # Überprüfung der Bewusstlosigkeit
                 if verteidiger["lebenspunkte"] < 10 or finaler_schaden > 60:
@@ -423,6 +445,7 @@ def kampf_runden(zugreihenfolge, überraschte_charaktere):
                 print(f"  Trefferfaktor ({treffer_art}, ×{schaden_faktor}): {effektiver_schaden} * {schaden_faktor} = {effektiver_schaden * schaden_faktor:.2f}")
                 print(f"  Finaler Schaden: {finaler_schaden} (gerundet)")
                 print(f"  Lebenspunkte von {ziel_name} am Zugende: {verteidiger['lebenspunkte']}")
+                print(f"  Rüstungszustand von {ziel_name} am Zugende: {verteidiger['rustungszustand']}")
                 print(f"  Bewusstlos: { 'Ja' if verteidiger['ist_bewusstlos'] else 'Nein' }")
                 print(f"  Tot: { 'Ja' if verteidiger['ist_tot'] else 'Nein' }")
 
