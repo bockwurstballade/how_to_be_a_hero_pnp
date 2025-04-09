@@ -35,6 +35,7 @@ python3 how_to_be_a_hero_fight.py [options]
 * -i <input_file>: Load teams from a JSON file.
 * -o <output_file>: Save teams to a JSON file after modifications.
 * -r or --break-armor: Enable armor degradation on critical hits.
+* -d or --damage-type: Enable damage type based on difference between attribute value and dice roll
 
 ### Examples
 

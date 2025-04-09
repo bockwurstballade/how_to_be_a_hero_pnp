@@ -8,8 +8,14 @@ import argparse
 # Funktion zum Parsen der Kommandozeilenargumente
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Kampfabwicklung für Rollenspiele")
+    parser.add_argument("-i", "--input-file", type=str, default=None, 
+                        help="Teams und Charakterattribute aus JSON Input Datei laden")
+    parser.add_argument("-o", "--output-file", type=str, default=None, 
+                        help="Teams und Charakterattribute nach der Charaktereingabe in eine externe JSON Datei speichern")
     parser.add_argument("-r", "--break-armor", action="store_true", 
                         help="Rüstungszustand bei kritischen Treffern anpassen")
+    parser.add_argument("-d", "--damage-type", action="store_true", 
+                        help="Ermöglicht variable Trefferarten (Streiftreffer, Kritischer Treffer)")
     return parser.parse_args()
 
 # Liste zur Speicherung aller Teams
@@ -21,7 +27,7 @@ def charakter_eingeben(team_name, break_armor):
     name = input("Name des Charakters: ")
     lebenspunkte = int(input("Lebenspunkte zum Kampfbeginn: "))
 
-    # Rüstungswert
+    # Rüstungswert Modul https://howtobeahero.de/index.php/R%C3%BCstung
     rustungswert = int(input("Rüstungswert (0-9): "))
     while rustungswert < 0 or rustungswert > 9:
         print("Rüstungswert muss zwischen 0 und 9 liegen!")
@@ -251,7 +257,7 @@ def finale_ausgabe(teams):
             print(f"  {char['name']}: {char['lebenspunkte']} Lebenspunkte, {char['rustungszustand']} Rüstungszustand, {status}")
 
 # Funktion für die Kampfmechanik
-def kampf_runden(zugreihenfolge, überraschte_charaktere, break_armor):
+def kampf_runden(zugreihenfolge, überraschte_charaktere, break_armor, damage_type):
     runde = 1
     while True:
         print(f"\n=== Kampfrunde {runde} ===")
@@ -387,29 +393,35 @@ def kampf_runden(zugreihenfolge, überraschte_charaktere, break_armor):
                         continue
                     break
                 
-                # Art des Treffers basierend auf Abstand
-                abstand = zielwert - würfelprobe
-                if abstand <= 10:
-                    treffer_art = "Streiftreffer"
-                    schaden_faktor = 0.75
-                elif abstand > 60:
-                    treffer_art = "Kritischer Treffer (Durchschuss)"
-                    schaden_faktor = 1.15
-                else:
+                # Art des Treffers Modul basierend auf Abstand zwischen Wurfprobe und Fähigkeitswert
+                # https://howtobeahero.de/index.php/Kampfsystem_Extension_(Neuzeit)
+                if not damage_type:
                     treffer_art = "Normaler Treffer"
                     schaden_faktor = 1.0
+                else:
+                    abstand = zielwert - würfelprobe
+                    if abstand <= 10:
+                        treffer_art = "Streiftreffer"
+                        schaden_faktor = 0.75
+                    elif abstand > 60:
+                        treffer_art = "Kritischer Treffer (Durchschuss)"
+                        schaden_faktor = 1.15
+                    else:
+                        treffer_art = "Normaler Treffer"
+                        schaden_faktor = 1.0
                 
                 # Basis-Schaden ohne Rüstung
                 base_schaden = sum(schadenswürfel) + schadensbonus
-                schaden_mit_faktor = base_schaden * schaden_faktor
                 
+                # Verteidiger bestimmen
+                verteidiger = finde_verteidiger(teams, ziel_name, ziel_team)
+                print(f"Lebenspunkte von {verteidiger['name']} Zu Beginn: {verteidiger['lebenspunkte']}")
+                print(f"Rüstungszustand von {verteidiger['name']} Zu Beginn: {verteidiger['rustungszustand']}")
                 # Rüstungszustand mildern bei kritischem Erfolg
                 if ergebnis == "kritischer Erfolg" and break_armor:
                     verteidiger["rustungszustand"] = max(0, verteidiger["rustungszustand"] - 1)
                     print(f"Die Rüstung von {verteidiger['name']} wurde beschädigt! Neuer Rüstungszustand: {verteidiger['rustungszustand']}")
-
-                # Rüstungswert anwenden
-                verteidiger = finde_verteidiger(teams, ziel_name, ziel_team)
+                # Schaden um Rüstungszustand mildern
                 rustungswert = verteidiger["rustungswert"]
                 rustungszustand = verteidiger["rustungszustand"]
                 max_ignorierte = verteidiger["max_ignorierte_augenpaare"]
@@ -417,8 +429,6 @@ def kampf_runden(zugreihenfolge, überraschte_charaktere, break_armor):
                 ignorierte_würfel = [w for w in schadenswürfel if w <= rustungszustand][:max_ignorierte]
                 effektiver_schaden = sum(w for w in schadenswürfel if w not in ignorierte_würfel) + schadensbonus
                 finaler_schaden = int(effektiver_schaden * schaden_faktor)
-                print(f"Lebenspunkte von {verteidiger['name']} Zu Beginn: {verteidiger['lebenspunkte']}")
-                print(f"Rüstungszustand von {verteidiger['name']} Zu Beginn: {verteidiger['rustungszustand']}")
                 verteidiger["lebenspunkte"] -= finaler_schaden
                 print(f"{verteidiger['name']} hat {verteidiger['lebenspunkte']} Lebenspunkte am Zugende.")
                 print(f"{verteidiger['name']} hat {verteidiger['rustungszustand']} Rüstungszustand am Zugende.")
@@ -476,31 +486,29 @@ def kampf_runden(zugreihenfolge, überraschte_charaktere, break_armor):
         paraden_diese_runde.clear()  # Zurücksetzen der Paraden für die nächste Runde
 
 # Kommandozeilen-Parameter verarbeiten
-input_datei = None
-output_datei = None
+input_file = None
+output_file = None
 
-if "-i" in sys.argv and len(sys.argv) > sys.argv.index("-i") + 1:
-    input_datei = sys.argv[sys.argv.index("-i") + 1]
-if "-o" in sys.argv and len(sys.argv) > sys.argv.index("-o") + 1:
-    output_datei = sys.argv[sys.argv.index("-o") + 1]
-
-if not input_datei and not output_datei:
+if not input_file and not output_file:
     print("Hinweis: Mit '-i <Dateipfad>' kannst du Teams aus einer Datei laden.")
     print("         Mit '-o <Dateipfad>' kannst du die Teams in eine Datei speichern.")
 
 args = parse_arguments()
 break_armor = args.break_armor
+damage_type = args.damage_type
+input_file = args.input_file
+output_file = args.output_file
 
 # Ursprüngliche Teams für Vergleich speichern (falls -i und -o kombiniert)
 original_teams = None
 
 # Teams laden oder neu erstellen
-if input_datei:
+if input_file:
     try:
-        with open(input_datei, "r", encoding="utf-8") as f:
+        with open(input_file, "r", encoding="utf-8") as f:
             teams = json.load(f)
             original_teams = copy.deepcopy(teams)
-        print(f"Teams aus '{input_datei}' geladen.")
+        print(f"Teams aus '{input_file}' geladen.")
         
         print("\n=== Übersicht aller Teams ===")
         for team in teams:
@@ -520,10 +528,10 @@ if input_datei:
         if zusatz == "ja":
             zusätzliche_charaktere_eingeben()
     except FileNotFoundError:
-        print(f"Fehler: Datei '{input_datei}' nicht gefunden. Programm wird beendet.")
+        print(f"Fehler: Datei '{input_file}' nicht gefunden. Programm wird beendet.")
         sys.exit(1)
     except json.JSONDecodeError:
-        print(f"Fehler: '{input_datei}' enthält kein gültiges JSON. Programm wird beendet.")
+        print(f"Fehler: '{input_file}' enthält kein gültiges JSON. Programm wird beendet.")
         sys.exit(1)
 else:
     anzahl_teams = int(input("Wie viele Teams sollen erstellt werden? "))
@@ -531,7 +539,7 @@ else:
         teams.append(team_eingeben(i))
 
 # Übersicht anzeigen (falls nicht schon durch -i geschehen)
-if not input_datei:
+if not input_file:
     print("\n=== Übersicht aller Teams ===")
     for team in teams:
         print(f"\nTeam '{team['name']}':")
@@ -550,20 +558,20 @@ zufrieden = input("\nBist du mit deiner Eingabe zufrieden? (ja/nein): ").lower()
 if zufrieden == "ja":
     print("Eingabe bestätigt.")
     
-    if output_datei:
-        if input_datei and original_teams != teams:
-            with open(output_datei, "w", encoding="utf-8") as f:
+    if output_file:
+        if input_file and original_teams != teams:
+            with open(output_file, "w", encoding="utf-8") as f:
                 json.dump(teams, f, indent=4, ensure_ascii=False)
-            print(f"Teams wurden in '{output_datei}' gespeichert (Änderungen gegenüber '{input_datei}' erkannt).")
-        elif not input_datei:
-            with open(output_datei, "w", encoding="utf-8") as f:
+            print(f"Teams wurden in '{output_file}' gespeichert (Änderungen gegenüber '{input_file}' erkannt).")
+        elif not input_file:
+            with open(output_file, "w", encoding="utf-8") as f:
                 json.dump(teams, f, indent=4, ensure_ascii=False)
-            print(f"Teams wurden in '{output_datei}' gespeichert.")
+            print(f"Teams wurden in '{output_file}' gespeichert.")
         else:
-            print(f"Keine Änderungen gegenüber '{input_datei}'. Keine neue Datei erstellt.")
+            print(f"Keine Änderungen gegenüber '{input_file}'. Keine neue Datei erstellt.")
     
     # Initiative-Runde durchführen und Kampf starten
     zugreihenfolge, überraschte_charaktere = initiative_runde()
-    kampf_runden(zugreihenfolge, überraschte_charaktere, break_armor)
+    kampf_runden(zugreihenfolge, überraschte_charaktere, break_armor, damage_type)
 else:
     print("Eingabe abgebrochen. Bitte starte das Programm neu, um es nochmal zu versuchen.")
