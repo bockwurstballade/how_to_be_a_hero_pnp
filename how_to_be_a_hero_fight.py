@@ -11,7 +11,9 @@ def parse_arguments():
     parser.add_argument("-i", "--input-file", type=str, default=None, 
                         help="Teams und Charakterattribute aus JSON Input Datei laden")
     parser.add_argument("-o", "--output-file", type=str, default=None, 
-                        help="Teams und Charakterattribute nach der Charaktereingabe in eine externe JSON Datei speichern")
+                        help="Teams und Charakterattribute nach der Charaktereingabe in eine externe JSON Datei speichern - speichert NICHT das Ergebnis des Kampfes")
+    parser.add_argument("-z", "--result-file", type=str, default=None, 
+                        help="Teams und Charakterattribute nach Spielzug in eine Datei schreiben. Speichert das Endresultat des Kampfes")
     parser.add_argument("-r", "--break-armor", action="store_true", 
                         help="Rüstungszustand bei kritischen Treffern anpassen")
     parser.add_argument("-d", "--damage-type", action="store_true", 
@@ -256,8 +258,17 @@ def finale_ausgabe(teams):
             status = "tot" if char["ist_tot"] else ("bewusstlos" if char["ist_bewusstlos"] else "bei Bewusstsein")
             print(f"  {char['name']}: {char['lebenspunkte']} Lebenspunkte, {char['rustungszustand']} Rüstungszustand, {status}")
 
+# Aktuelle Charakterwerte nach einem Spielzug in eine Datei schreiben
+def save_result(teams, output_path):
+    try:
+        with open(output_path, "w", encoding="utf-8") as f:
+            json.dump(teams, f, indent=4, ensure_ascii=False)
+        print(f"Zwischenstand wurde in '{output_path}' gespeichert.")
+    except Exception as e:
+        print(f"Fehler beim Speichern: {e}")
+
 # Funktion für die Kampfmechanik
-def kampf_runden(zugreihenfolge, überraschte_charaktere, break_armor, damage_type):
+def kampf_runden(zugreihenfolge, überraschte_charaktere, break_armor, damage_type, result_file):
     runde = 1
     while True:
         print(f"\n=== Kampfrunde {runde} ===")
@@ -463,7 +474,11 @@ def kampf_runden(zugreihenfolge, überraschte_charaktere, break_armor, damage_ty
                 print(f"  Bewusstlos: { 'Ja' if verteidiger['ist_bewusstlos'] else 'Nein' }")
                 print(f"  Tot: { 'Ja' if verteidiger['ist_tot'] else 'Nein' }")
 
-                # Ende der Runde
+                # Ende des Zuges
+                ## Aktuellen Stand in Resultatsdatei schreiben
+                if result_file:
+                    save_result(teams, result_file)
+                ## Option zum Beenden des Kampfes anzeigen, wenn eine Spielergruppe tot
                 if alle_spieler_tot(teams):
                     print("Alle Spielercharaktere sind tot. Möchtest du den Kampf beenden?")
                     beenden = input("(ja/nein): ").lower()
@@ -498,6 +513,7 @@ break_armor = args.break_armor
 damage_type = args.damage_type
 input_file = args.input_file
 output_file = args.output_file
+result_file = args.result_file
 
 # Ursprüngliche Teams für Vergleich speichern (falls -i und -o kombiniert)
 original_teams = None
@@ -572,6 +588,6 @@ if zufrieden == "ja":
     
     # Initiative-Runde durchführen und Kampf starten
     zugreihenfolge, überraschte_charaktere = initiative_runde()
-    kampf_runden(zugreihenfolge, überraschte_charaktere, break_armor, damage_type)
+    kampf_runden(zugreihenfolge, überraschte_charaktere, break_armor, damage_type, result_file)
 else:
     print("Eingabe abgebrochen. Bitte starte das Programm neu, um es nochmal zu versuchen.")
