@@ -3,12 +3,20 @@ import json
 import copy
 import random
 import re
+import argparse
+
+# Funktion zum Parsen der Kommandozeilenargumente
+def parse_arguments():
+    parser = argparse.ArgumentParser(description="Kampfabwicklung für Rollenspiele")
+    parser.add_argument("-r", "--break-armor", action="store_true", 
+                        help="Rüstungszustand bei kritischen Treffern anpassen")
+    return parser.parse_args()
 
 # Liste zur Speicherung aller Teams
 teams = []
 
 # Funktion zur Eingabe eines Charakters
-def charakter_eingeben(team_name):
+def charakter_eingeben(team_name, break_armor):
     print(f"\nCharakter für Team '{team_name}' eingeben:")
     name = input("Name des Charakters: ")
     lebenspunkte = int(input("Lebenspunkte zum Kampfbeginn: "))
@@ -20,19 +28,15 @@ def charakter_eingeben(team_name):
         rustungswert = int(input("Rüstungswert (0-9): "))
 
     # Rüstungszustand
-    rustungszustand_input = input("Aktueller Rüstungszustand (Enter für Rüstungswert): ")
-    if rustungszustand_input == "":
-        rustungszustand = rustungswert
+    if break_armor:
+        rustungszustand_input = input("Aktueller Rüstungszustand (Enter für Rüstungswert): ")
+        rustungszustand = rustungswert if rustungszustand_input == "" else int(rustungszustand_input)
+        # Validierung des Rüstungszustands
+        while rustungszustand < 0 or rustungszustand > rustungswert:
+            rustungszustand = int(input("Aktueller Rüstungszustand (0 bis Rüstungswert): "))
     else:
-        rustungszustand = int(rustungszustand_input)
-        while rustungszustand < 0 or rustungszustand > 9 or rustungszustand > rustungswert:
-            if rustungszustand < 0 or rustungszustand > 9:
-                print("Rüstungszustand muss zwischen 0 und 9 liegen!")
-            elif rustungszustand > rustungswert:
-                print("Rüstungszustand kann nicht größer als der Rüstungswert sein!")
-            rustungszustand = int(input("Aktueller Rüstungszustand (0-9): "))
-
-    max_ignorierte_augenpaare = int(input("Maximale Anzahl ignorierter Augenpaare: "))
+        rustungszustand = rustungswert  # Immer gleich Rüstungswert, wenn break_armor False ist
+        max_ignorierte_augenpaare = int(input("Maximale Anzahl ignorierter Augenpaare: "))
 
     # Handeln-Wert
     handeln = int(input("Handeln-Wert: "))
@@ -68,7 +72,7 @@ def team_eingeben(team_nummer):
     print(f"Team '{team_name}' wird erstellt:")
     team = {"name": team_name, "charaktere": []}
     while True:
-        team["charaktere"].append(charakter_eingeben(team_name))
+        team["charaktere"].append(charakter_eingeben(team_name, break_armor))
         noch_einer = input("Weiteren Charakter für dieses Team hinzufügen? (ja/nein): ").lower()
         if noch_einer != "ja":
             break
@@ -80,7 +84,7 @@ def zusätzliche_charaktere_eingeben():
         print(f"\nTeam '{team['name']}':")
         zusatz = input("Möchtest du einen weiteren Charakter zu diesem Team hinzufügen? (ja/nein): ").lower()
         while zusatz == "ja":
-            team["charaktere"].append(charakter_eingeben(team["name"]))
+            team["charaktere"].append(charakter_eingeben(team["name"], break_armor))
             zusatz = input("Möchtest du einen weiteren Charakter zu diesem Team hinzufügen? (ja/nein): ").lower()
 
 # Funktion für die Initiative-Runde mit Rückgabe der Zugreihenfolge und Überraschten
@@ -247,7 +251,7 @@ def finale_ausgabe(teams):
             print(f"  {char['name']}: {char['lebenspunkte']} Lebenspunkte, {char['rustungszustand']} Rüstungszustand, {status}")
 
 # Funktion für die Kampfmechanik
-def kampf_runden(zugreihenfolge, überraschte_charaktere):
+def kampf_runden(zugreihenfolge, überraschte_charaktere, break_armor):
     runde = 1
     while True:
         print(f"\n=== Kampfrunde {runde} ===")
@@ -400,7 +404,7 @@ def kampf_runden(zugreihenfolge, überraschte_charaktere):
                 schaden_mit_faktor = base_schaden * schaden_faktor
                 
                 # Rüstungszustand mildern bei kritischem Erfolg
-                if ergebnis == "kritischer Erfolg":
+                if ergebnis == "kritischer Erfolg" and break_armor:
                     verteidiger["rustungszustand"] = max(0, verteidiger["rustungszustand"] - 1)
                     print(f"Die Rüstung von {verteidiger['name']} wurde beschädigt! Neuer Rüstungszustand: {verteidiger['rustungszustand']}")
 
@@ -484,6 +488,9 @@ if not input_datei and not output_datei:
     print("Hinweis: Mit '-i <Dateipfad>' kannst du Teams aus einer Datei laden.")
     print("         Mit '-o <Dateipfad>' kannst du die Teams in eine Datei speichern.")
 
+args = parse_arguments()
+break_armor = args.break_armor
+
 # Ursprüngliche Teams für Vergleich speichern (falls -i und -o kombiniert)
 original_teams = None
 
@@ -557,6 +564,6 @@ if zufrieden == "ja":
     
     # Initiative-Runde durchführen und Kampf starten
     zugreihenfolge, überraschte_charaktere = initiative_runde()
-    kampf_runden(zugreihenfolge, überraschte_charaktere)
+    kampf_runden(zugreihenfolge, überraschte_charaktere, break_armor)
 else:
     print("Eingabe abgebrochen. Bitte starte das Programm neu, um es nochmal zu versuchen.")
