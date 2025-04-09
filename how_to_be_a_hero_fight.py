@@ -210,7 +210,7 @@ def finde_verteidiger(teams, ziel_name, ziel_team):
                     return char
     return None
 
-# Funktion zur Parsen der Schadensformel
+# Funktion zum Parsen der Schadensformel
 def parse_schadensformel(formel):
     match = re.match(r"(\d+)W(\d+)(?:\+(\d+))?", formel)
     if not match:
