@@ -4,6 +4,7 @@ import copy
 import random
 import re
 import argparse
+import logging
 
 # Funktion zum Parsen der Kommandozeilenargumente
 def parse_arguments():
@@ -14,6 +15,8 @@ def parse_arguments():
                         help="Teams und Charakterattribute nach der Charaktereingabe in eine externe JSON Datei speichern - speichert NICHT das Ergebnis des Kampfes")
     parser.add_argument("-z", "--result-file", type=str, default=None, 
                         help="Teams und Charakterattribute nach Spielzug in eine Datei schreiben. Speichert das Endresultat des Kampfes")
+    parser.add_argument("-l", "--log-file", type=str, default=None, 
+                        help="Schreibt Nachrichten nicht nur in die Konsole, sondern zusätzlich in eine Logdatei")
     parser.add_argument("-r", "--break-armor", action="store_true", 
                         help="Rüstungszustand bei kritischen Treffern anpassen")
     parser.add_argument("-d", "--damage-type", action="store_true", 
@@ -97,7 +100,7 @@ def zusätzliche_charaktere_eingeben():
 
 # Funktion für die Initiative-Runde mit Rückgabe der Zugreihenfolge und Überraschten
 def initiative_runde():
-    print("\n=== Initiative-Runde ===")
+    logging.info(f"=== Initiative-Runde ===")
     
     # Alle Charaktere sammeln
     alle_charaktere = []
@@ -155,16 +158,17 @@ def initiative_runde():
     )
     
     # Zugreihenfolge ausgeben
-    print("\n=== Zugreihenfolge ===")
+    logging.info(f"=== Zugreihenfolge ===")
     for i, char in enumerate(zugreihenfolge, 1):
         init_wert = initiative_werte[char["name"]]
         original_wurf, effektiver_wurf = wurf_werte[char["name"]]
         handeln = char["handeln"]
         rustungswert = char["rustungswert"]
-        print(f"{i}. {char['name']} (Team: {char['team']}, Initiative: {init_wert} [Wurf: {original_wurf} - Rüstungsmalus: {rustungswert} = {effektiver_wurf} + Handeln: {handeln}], NSC: {'Ja' if char['ist_nsc'] else 'Nein'})")
-    
+        logging.info(f"{i}. {char['name']} (Team: {char['team']}, Initiative: {init_wert} [Wurf: {original_wurf} - Rüstungsmalus: {rustungswert} = {effektiver_wurf} + Handeln: {handeln}], NSC: {'Ja' if char['ist_nsc'] else 'Nein'})")
+
+
     # Überraschungsrunde
-    print("\n=== Überraschungsrunde ===")
+    logging.info(f"\n=== Überraschungsrunde ===")
     überraschte_charaktere = {}
     for team in teams:
         team_name = team["name"]
@@ -180,14 +184,14 @@ def initiative_runde():
                     überraschte_charaktere[team_name].append(char["name"])
     
     # Übersicht der überraschten Charaktere
-    print("\n=== Überraschte Charaktere nach Teams ===")
+    logging.info(f"=== Überraschte Charaktere nach Teams ===")
     for team_name, char_list in überraschte_charaktere.items():
         print(f"\nTeam '{team_name}':")
         if char_list:
             for char_name in char_list:
-                print(f"  - {char_name}")
+                logging.info(f"  - {char_name}")
         else:
-            print("  Keine Charaktere überrascht")
+            logging.info(f"  Keine Charaktere überrascht")
     
     return zugreihenfolge, überraschte_charaktere
 
@@ -203,14 +207,14 @@ def wähle_ziel(teams, eingabe):
                 ziel = random.choice(team["charaktere"])
                 return ziel["name"], team["name"]
             else:
-                print(f"Team '{team['name']}' hat keine (lebenden) Charaktere!")
+                logging.info(f"Team '{team['name']}' hat keine (lebenden) Charaktere!")
                 return None, None
     # Wenn kein Team, als Charaktername interpretieren
     for team in teams:
         for char in team["charaktere"]:
             if char["name"].lower() == eingabe.lower() and not char["ist_tot"]:
                 return char["name"], team["name"]
-    print(f"Kein (lebender) Charakter oder Team namens '{eingabe}' gefunden! Bitte erneut versuchen oder 'NIEMAND' eingeben.")
+    logging.info(f"Kein (lebender) Charakter oder Team namens '{eingabe}' gefunden! Bitte erneut versuchen oder 'NIEMAND' eingeben.")
     return None, None
 
 # Funktion zur Ermittlung des Verteidigers
@@ -250,50 +254,71 @@ def alle_nscs_tot(teams):
 
 # Ausgabe Spielerstatus nach Kampfende
 def finale_ausgabe(teams):
-    print("Kampf beendet.\n")
-    print("\n=== Finale Übersicht ===")
+    logging.info(f"Kampf beendet.")
+    logging.info(f"=== Finale Übersicht ===")
     for team in teams:
-        print(f"\nTeam '{team['name']}':")
+        logging.info(f"\nTeam '{team['name']}':")
         for char in team["charaktere"]:
             status = "tot" if char["ist_tot"] else ("bewusstlos" if char["ist_bewusstlos"] else "bei Bewusstsein")
-            print(f"  {char['name']}: {char['lebenspunkte']} Lebenspunkte, {char['rustungszustand']} Rüstungszustand, {status}")
+            logging.info(f"  {char['name']}: {char['lebenspunkte']} Lebenspunkte, {char['rustungszustand']} Rüstungszustand, {status}")
 
 # Aktuelle Charakterwerte nach einem Spielzug in eine Datei schreiben
 def save_result(teams, output_path):
     try:
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(teams, f, indent=4, ensure_ascii=False)
-        print(f"Zwischenstand wurde in '{output_path}' gespeichert.")
+        logging.info(f"Zwischenstand wurde in '{output_path}' gespeichert.")
     except Exception as e:
-        print(f"Fehler beim Speichern: {e}")
+        logging.info(f"Fehler beim Speichern der Resultatsdatei: {e}")
+
+
+# Funktion zur Protokollierung in eine Logdatei
+def setup_logging(log_file):
+    if log_file:
+        # Logging für Datei und Konsole einrichten
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(asctime)s - %(levelname)s - %(message)s",
+            handlers=[
+                logging.FileHandler(log_file),  # Schreibt in die Logdatei
+                logging.StreamHandler(sys.stdout)  # Schreibt auf die Konsole
+            ]
+        )
+    else:
+        # Nur Konsole, wenn kein Logfile angegeben
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(asctime)s - %(levelname)s - %(message)s",
+            handlers=[logging.StreamHandler(sys.stdout)]
+        )
 
 # Funktion für die Kampfmechanik
 def kampf_runden(zugreihenfolge, überraschte_charaktere, break_armor, damage_type, result_file):
     runde = 1
     while True:
-        print(f"\n=== Kampfrunde {runde} ===")
+        logging.info(f"\n=== Kampfrunde {runde} ===")
         # Tracking der Paraden pro Runde
         paraden_diese_runde = set()
         
         for char in zugreihenfolge:
             if char["ist_tot"]:
-                print(f"{char['name']} ist tot.")
+                logging.info(f"{char['name']} ist tot.")
                 continue
             if char["ist_bewusstlos"]:
-                print(f"{char['name']} ist bewusstlos und kann nicht handeln.")
+                logging.info(f"{char['name']} ist bewusstlos und kann nicht handeln.")
                 continue  # Überspringt den Zug dieses Charakters
             char_name = char["name"]
             team_name = char["team"]
             # Prüfen, ob der Charakter in der ersten Runde überrascht ist
             if runde == 1 and char_name in überraschte_charaktere[team_name]:
-                print(f"{char_name} (Team: {team_name}) ist überrascht und setzt diese Runde aus.")
+                logging.info(f"{char_name} (Team: {team_name}) ist überrascht und setzt diese Runde aus.")
                 continue
             
             # Wenn nicht überrascht, normale Zugabfragen
-            print(f"\nZug von {char_name} (Team: {team_name}):")
+            logging.info(f"\nZug von {char_name} (Team: {team_name}):")
             gelähmt = input("Ist der Spieler diesen Zug gelähmt? (ja/nein): ").lower()
             if gelähmt == "ja":
-                print(f"{char_name} ist gelähmt und kann diesen Zug nicht angreifen.")
+                logging.info(f"{char_name} ist gelähmt und kann diesen Zug nicht angreifen.")
                 continue
             
             # Zielauswahl mit erneuter Abfrage bei ungültigem Ziel
@@ -314,7 +339,7 @@ def kampf_runden(zugreihenfolge, überraschte_charaktere, break_armor, damage_ty
             
             # Wenn "NIEMAND" eingegeben wurde, wird nicht angegriffen
             if ziel_eingabe == "NIEMAND":
-                print(f"{char_name} greift niemanden an.")
+                logging.info(f"{char_name} greift niemanden an.")
                 continue
             
             # Angriffsfähigkeit
@@ -346,7 +371,7 @@ def kampf_runden(zugreihenfolge, überraschte_charaktere, break_armor, damage_ty
             else:
                 ergebnis = "Misserfolg"  # Fallback für edge cases
             
-            print(f"{char_name} greift {ziel_name} (Team: {ziel_team}) an: {ergebnis} (Würfelprobe: {würfelprobe}, Zielwert: {zielwert}, {prozent:.1f}%)")
+            logging.info(f"{char_name} greift {ziel_name} (Team: {ziel_team}) an: {ergebnis} (Würfelprobe: {würfelprobe}, Zielwert: {zielwert}, {prozent:.1f}%)")
             
             # Parade-Option und Schadensberechnung
             parade_erfolgreich = False
@@ -366,20 +391,20 @@ def kampf_runden(zugreihenfolge, überraschte_charaktere, break_armor, damage_ty
                         parade_zielwert = paradewert + parade_erleichter
                         
                         if parade_würfelprobe <= parade_zielwert:
-                            print(f"{ziel_name} hat den Angriff erfolgreich pariert! (Würfelprobe: {parade_würfelprobe} ≤ Zielwert: {parade_zielwert})")
+                            logging.info(f"{ziel_name} hat den Angriff erfolgreich pariert! (Würfelprobe: {parade_würfelprobe} ≤ Zielwert: {parade_zielwert})")
                             parade_erfolgreich = True
                         else:
-                            print(f"{ziel_name} hat die Parade verfehlt! (Würfelprobe: {parade_würfelprobe} > Zielwert: {parade_zielwert})")
+                            logging.info(f"{ziel_name} hat die Parade verfehlt! (Würfelprobe: {parade_würfelprobe} > Zielwert: {parade_zielwert})")
                         paraden_diese_runde.add(ziel_name)  # Parade für diese Runde markieren
                 elif ziel_name in paraden_diese_runde:
-                    print(f"{ziel_name} hat diese Runde bereits pariert und kann nicht erneut parieren.")
+                    logging.info(f"{ziel_name} hat diese Runde bereits pariert und kann nicht erneut parieren.")
                 else:
                     if verteidiger["ist_bewusstlos"]:
-                        print(f"{verteidiger['name']} ist bewusstlos und kann nicht parieren.")
+                        logging.info(f"{verteidiger['name']} ist bewusstlos und kann nicht parieren.")
                         parade_erfolgreich = False
             
             elif ergebnis == "kritischer Erfolg":
-                print("Kritischer Erfolg: Keine Parade möglich!")
+                logging.info("Kritischer Erfolg: Keine Parade möglich!")
 
             # Schadensberechnung, falls Angriff erfolgreich und nicht pariert
             if ergebnis in ["normaler Erfolg", "guter Erfolg", "sehr guter Erfolg", "kritischer Erfolg"] and not parade_erfolgreich:
@@ -426,12 +451,12 @@ def kampf_runden(zugreihenfolge, überraschte_charaktere, break_armor, damage_ty
                 
                 # Verteidiger bestimmen
                 verteidiger = finde_verteidiger(teams, ziel_name, ziel_team)
-                print(f"Lebenspunkte von {verteidiger['name']} Zu Beginn: {verteidiger['lebenspunkte']}")
-                print(f"Rüstungszustand von {verteidiger['name']} Zu Beginn: {verteidiger['rustungszustand']}")
+                logging.info(f"Lebenspunkte von {verteidiger['name']} Zu Beginn: {verteidiger['lebenspunkte']}")
+                logging.info(f"Rüstungszustand von {verteidiger['name']} Zu Beginn: {verteidiger['rustungszustand']}")
                 # Rüstungszustand mildern bei kritischem Erfolg
                 if ergebnis == "kritischer Erfolg" and break_armor:
                     verteidiger["rustungszustand"] = max(0, verteidiger["rustungszustand"] - 1)
-                    print(f"Die Rüstung von {verteidiger['name']} wurde beschädigt! Neuer Rüstungszustand: {verteidiger['rustungszustand']}")
+                    logging.info(f"Die Rüstung von {verteidiger['name']} wurde beschädigt! Neuer Rüstungszustand: {verteidiger['rustungszustand']}")
                 # Schaden um Rüstungszustand mildern
                 rustungswert = verteidiger["rustungswert"]
                 rustungszustand = verteidiger["rustungszustand"]
@@ -441,38 +466,38 @@ def kampf_runden(zugreihenfolge, überraschte_charaktere, break_armor, damage_ty
                 effektiver_schaden = sum(w for w in schadenswürfel if w not in ignorierte_würfel) + schadensbonus
                 finaler_schaden = int(effektiver_schaden * schaden_faktor)
                 verteidiger["lebenspunkte"] -= finaler_schaden
-                print(f"{verteidiger['name']} hat {verteidiger['lebenspunkte']} Lebenspunkte am Zugende.")
-                print(f"{verteidiger['name']} hat {verteidiger['rustungszustand']} Rüstungszustand am Zugende.")
+                logging.info(f"{verteidiger['name']} hat {verteidiger['lebenspunkte']} Lebenspunkte am Zugende.")
+                logging.info(f"{verteidiger['name']} hat {verteidiger['rustungszustand']} Rüstungszustand am Zugende.")
 
                 # Überprüfung der Bewusstlosigkeit
                 if verteidiger["lebenspunkte"] < 10 or finaler_schaden > 60:
                     verteidiger["ist_bewusstlos"] = True
-                    print(f"{verteidiger['name']} ist jetzt bewusstlos!")
+                    logging.info(f"{verteidiger['name']} ist jetzt bewusstlos!")
 
                 # Überprüfung auf tot
                 if verteidiger["lebenspunkte"] <= 0:
                     verteidiger["ist_tot"] = True
-                    print(f"{verteidiger['name']} ist gestorben!")
+                    logging.info(f"{verteidiger['name']} ist gestorben!")
 
                 # Ausgabe mit vollständigem Rechenweg
-                print(f"{char_name} verursacht {finaler_schaden} Schaden an {ziel_name} ({treffer_art}):")
-                print(f"  Schadensformel: {schadensformel}")
-                print(f"  Würfel: {schadenswürfel}")
+                logging.info(f"{char_name} verursacht {finaler_schaden} Schaden an {ziel_name} ({treffer_art}):")
+                logging.info(f"  Schadensformel: {schadensformel}")
+                logging.info(f"  Würfel: {schadenswürfel}")
                 if ignorierte_würfel:
-                    print(f"  Ignorierte Würfel (Rüstungswert {rustungswert}, max {max_ignorierte}): {ignorierte_würfel}")
+                    logging.info(f"  Ignorierte Würfel (Rüstungswert {rustungswert}, max {max_ignorierte}): {ignorierte_würfel}")
                 else:
-                    print(f"  Keine Würfel ignoriert (Rüstungswert {rustungswert}, max {max_ignorierte})")
-                print(f"{char_name} verursacht {finaler_schaden} Schaden an {ziel_name} ({treffer_art}):")
-                print(f"  Schadensformel: {schadensformel}")
-                print(f"  Würfel: {schadenswürfel}")
-                print(f"  Ignorierte Würfel (Rüstungswert {rustungswert}, max {max_ignorierte}): {ignorierte_würfel}")
-                print(f"  Effektiver Schaden vor Trefferfaktor: {sum([w for w in schadenswürfel if w not in ignorierte_würfel])} + {schadensbonus} = {effektiver_schaden}")
-                print(f"  Trefferfaktor ({treffer_art}, ×{schaden_faktor}): {effektiver_schaden} * {schaden_faktor} = {effektiver_schaden * schaden_faktor:.2f}")
-                print(f"  Finaler Schaden: {finaler_schaden} (gerundet)")
-                print(f"  Lebenspunkte von {ziel_name} am Zugende: {verteidiger['lebenspunkte']}")
-                print(f"  Rüstungszustand von {ziel_name} am Zugende: {verteidiger['rustungszustand']}")
-                print(f"  Bewusstlos: { 'Ja' if verteidiger['ist_bewusstlos'] else 'Nein' }")
-                print(f"  Tot: { 'Ja' if verteidiger['ist_tot'] else 'Nein' }")
+                    logging.info(f"  Keine Würfel ignoriert (Rüstungswert {rustungswert}, max {max_ignorierte})")
+                logging.info(f"{char_name} verursacht {finaler_schaden} Schaden an {ziel_name} ({treffer_art}):")
+                logging.info(f"  Schadensformel: {schadensformel}")
+                logging.info(f"  Würfel: {schadenswürfel}")
+                logging.info(f"  Ignorierte Würfel (Rüstungswert {rustungswert}, max {max_ignorierte}): {ignorierte_würfel}")
+                logging.info(f"  Effektiver Schaden vor Trefferfaktor: {sum([w for w in schadenswürfel if w not in ignorierte_würfel])} + {schadensbonus} = {effektiver_schaden}")
+                logging.info(f"  Trefferfaktor ({treffer_art}, ×{schaden_faktor}): {effektiver_schaden} * {schaden_faktor} = {effektiver_schaden * schaden_faktor:.2f}")
+                logging.info(f"  Finaler Schaden: {finaler_schaden} (gerundet)")
+                logging.info(f"  Lebenspunkte von {ziel_name} am Zugende: {verteidiger['lebenspunkte']}")
+                logging.info(f"  Rüstungszustand von {ziel_name} am Zugende: {verteidiger['rustungszustand']}")
+                logging.info(f"  Bewusstlos: { 'Ja' if verteidiger['ist_bewusstlos'] else 'Nein' }")
+                logging.info(f"  Tot: { 'Ja' if verteidiger['ist_tot'] else 'Nein' }")
 
                 # Ende des Zuges
                 ## Aktuellen Stand in Resultatsdatei schreiben
@@ -514,6 +539,8 @@ damage_type = args.damage_type
 input_file = args.input_file
 output_file = args.output_file
 result_file = args.result_file
+setup_logging(args.log_file)
+logging.info("Programm gestartet.")
 
 # Ursprüngliche Teams für Vergleich speichern (falls -i und -o kombiniert)
 original_teams = None
@@ -524,30 +551,30 @@ if input_file:
         with open(input_file, "r", encoding="utf-8") as f:
             teams = json.load(f)
             original_teams = copy.deepcopy(teams)
-        print(f"Teams aus '{input_file}' geladen.")
+        logging.info(f"Teams aus '{input_file}' geladen.")
         
-        print("\n=== Übersicht aller Teams ===")
+        logging.info("\n=== Übersicht aller Teams ===")
         for team in teams:
-            print(f"\nTeam '{team['name']}':")
+            logging.info(f"\nTeam '{team['name']}':")
             for char in team["charaktere"]:
-                print(f"  Name: {char['name']}")
-                print(f"  Lebenspunkte: {char['lebenspunkte']}")
-                print(f"  Rüstungswert: {char['rustungswert']}")
-                print(f"  Max. ignorierte Augenpaare: {char['max_ignorierte_augenpaare']}")
-                print(f"  Handeln: {char['handeln']}")
-                print(f"  Parade: {char['parade']}")
-                print(f"  NSC: {'Ja' if char['ist_nsc'] else 'Nein'}")
-                print(f"  Bewusstlos: { 'Ja' if char['ist_bewusstlos'] else 'Nein' }")
+                logging.info(f"  Name: {char['name']}")
+                logging.info(f"  Lebenspunkte: {char['lebenspunkte']}")
+                logging.info(f"  Rüstungswert: {char['rustungswert']}")
+                logging.info(f"  Max. ignorierte Augenpaare: {char['max_ignorierte_augenpaare']}")
+                logging.info(f"  Handeln: {char['handeln']}")
+                logging.info(f"  Parade: {char['parade']}")
+                logging.info(f"  NSC: {'Ja' if char['ist_nsc'] else 'Nein'}")
+                logging.info(f"  Bewusstlos: { 'Ja' if char['ist_bewusstlos'] else 'Nein' }")
                 print("  ---")
         
         zusatz = input("\nMöchtest du manuell weitere Charaktere hinzufügen? (ja/nein): ").lower()
         if zusatz == "ja":
             zusätzliche_charaktere_eingeben()
     except FileNotFoundError:
-        print(f"Fehler: Datei '{input_file}' nicht gefunden. Programm wird beendet.")
+        logging.info(f"Fehler: Datei '{input_file}' nicht gefunden. Programm wird beendet.")
         sys.exit(1)
     except json.JSONDecodeError:
-        print(f"Fehler: '{input_file}' enthält kein gültiges JSON. Programm wird beendet.")
+        logging.info(f"Fehler: '{input_file}' enthält kein gültiges JSON. Programm wird beendet.")
         sys.exit(1)
 else:
     anzahl_teams = int(input("Wie viele Teams sollen erstellt werden? "))
@@ -558,15 +585,15 @@ else:
 if not input_file:
     print("\n=== Übersicht aller Teams ===")
     for team in teams:
-        print(f"\nTeam '{team['name']}':")
+        logging.info(f"\nTeam '{team['name']}':")
         for char in team["charaktere"]:
-            print(f"  Name: {char['name']}")
-            print(f"  Lebenspunkte: {char['lebenspunkte']}")
-            print(f"  Rüstungswert: {char['rustungswert']}")
-            print(f"  Max. ignorierte Augenpaare: {char['max_ignorierte_augenpaare']}")
-            print(f"  Handeln: {char['handeln']}")
-            print(f"  Parade: {char['parade']}")
-            print(f"  NSC: {'Ja' if char['ist_nsc'] else 'Nein'}")
+            logging.info(f"  Name: {char['name']}")
+            logging.info(f"  Lebenspunkte: {char['lebenspunkte']}")
+            logging.info(f"  Rüstungswert: {char['rustungswert']}")
+            logging.info(f"  Max. ignorierte Augenpaare: {char['max_ignorierte_augenpaare']}")
+            logging.info(f"  Handeln: {char['handeln']}")
+            logging.info(f"  Parade: {char['parade']}")
+            logging.info(f"  NSC: {'Ja' if char['ist_nsc'] else 'Nein'}")
             print("  ---")
 
 # Bestätigung abfragen
@@ -578,13 +605,13 @@ if zufrieden == "ja":
         if input_file and original_teams != teams:
             with open(output_file, "w", encoding="utf-8") as f:
                 json.dump(teams, f, indent=4, ensure_ascii=False)
-            print(f"Teams wurden in '{output_file}' gespeichert (Änderungen gegenüber '{input_file}' erkannt).")
+            logging.info(f"Teams wurden in '{output_file}' gespeichert (Änderungen gegenüber '{input_file}' erkannt).")
         elif not input_file:
             with open(output_file, "w", encoding="utf-8") as f:
                 json.dump(teams, f, indent=4, ensure_ascii=False)
-            print(f"Teams wurden in '{output_file}' gespeichert.")
+            logging.info(f"Teams wurden in '{output_file}' gespeichert.")
         else:
-            print(f"Keine Änderungen gegenüber '{input_file}'. Keine neue Datei erstellt.")
+            logging.info(f"Keine Änderungen gegenüber '{input_file}'. Keine neue Datei erstellt.")
     
     # Initiative-Runde durchführen und Kampf starten
     zugreihenfolge, überraschte_charaktere = initiative_runde()

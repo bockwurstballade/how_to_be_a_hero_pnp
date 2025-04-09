@@ -35,6 +35,7 @@ python3 how_to_be_a_hero_fight.py [options]
 * -i <input_file>: Load teams from a JSON file.
 * -o <output_file>: Save teams to a JSON file after character modifications (does not store the end result of the fight).
 * -z <result file>: After each player turn, saves the current status of all characters into a result file. This is useful if the program gets aborted for some reason and you want to continue from where you left off.
+* -l <log file>: Each important message shown on the console is also logged into a text file.
 * -r or --break-armor: Enable armor degradation on critical hits.
 * -d or --damage-type: Enable damage type based on difference between attribute value and dice roll
 
