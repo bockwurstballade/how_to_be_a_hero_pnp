@@ -17,37 +17,47 @@ def parse_arguments():
                         help="Teams und Charakterattribute nach Spielzug in eine Datei schreiben. Speichert das Endresultat des Kampfes")
     parser.add_argument("-l", "--log-file", type=str, default=None, 
                         help="Schreibt Nachrichten nicht nur in die Konsole, sondern zusätzlich in eine Logdatei")
+    parser.add_argument("-a", "--armor", action="store_true", 
+                        help="Aktiviert die Berücksichtigung von Rüstungswerten und -zuständen")
     parser.add_argument("-r", "--break-armor", action="store_true", 
                         help="Rüstungszustand bei kritischen Treffern anpassen")
     parser.add_argument("-d", "--damage-type", action="store_true", 
                         help="Ermöglicht variable Trefferarten (Streiftreffer, Kritischer Treffer)")
+    parser.add_argument("-y", "--ammo", action="store_true", 
+                        help="Aktiviert die Munitionsverwaltung für Waffen")
     return parser.parse_args()
 
 # Liste zur Speicherung aller Teams
 teams = []
 
 # Funktion zur Eingabe eines Charakters
-def charakter_eingeben(team_name, break_armor):
+def charakter_eingeben(team_name, break_armor, use_armor, use_ammo):
     print(f"\nCharakter für Team '{team_name}' eingeben:")
     name = input("Name des Charakters: ")
     lebenspunkte = int(input("Lebenspunkte zum Kampfbeginn: "))
 
     # Rüstungswert Modul https://howtobeahero.de/index.php/R%C3%BCstung
-    rustungswert = int(input("Rüstungswert (0-9): "))
-    while rustungswert < 0 or rustungswert > 9:
-        print("Rüstungswert muss zwischen 0 und 9 liegen!")
+    if use_armor:
         rustungswert = int(input("Rüstungswert (0-9): "))
-
-    # Rüstungszustand
-    if break_armor:
-        rustungszustand_input = input("Aktueller Rüstungszustand (Enter für Rüstungswert): ")
-        rustungszustand = rustungswert if rustungszustand_input == "" else int(rustungszustand_input)
-        # Validierung des Rüstungszustands
-        while rustungszustand < 0 or rustungszustand > rustungswert:
-            rustungszustand = int(input("Aktueller Rüstungszustand (0 bis Rüstungswert): "))
-    else:
-        rustungszustand = rustungswert  # Immer gleich Rüstungswert, wenn break_armor False ist
+        while rustungswert < 0 or rustungswert > 9:
+            print("Rüstungswert muss zwischen 0 und 9 liegen!")
+            rustungswert = int(input("Rüstungswert (0-9): "))
         max_ignorierte_augenpaare = int(input("Maximale Anzahl ignorierter Augenpaare: "))
+
+        # Rüstungszustand
+        if break_armor:
+            rustungszustand_input = input("Aktueller Rüstungszustand (Enter für Rüstungswert): ")
+            rustungszustand = rustungswert if rustungszustand_input == "" else int(rustungszustand_input)
+            # Validierung des Rüstungszustands
+            while rustungszustand < 0 or rustungszustand > rustungswert:
+                rustungszustand = int(input("Aktueller Rüstungszustand (0 bis Rüstungswert): "))
+        else:
+            rustungszustand = rustungswert  # Immer gleich Rüstungswert, wenn break_armor False ist
+    # don't consider armor in damage calculation
+    else:
+        rustungswert = 0
+        rustungszustand = 0
+        max_ignorierte_augenpaare = 0
 
     # Handeln-Wert
     handeln = int(input("Handeln-Wert: "))
@@ -64,6 +74,15 @@ def charakter_eingeben(team_name, break_armor):
     bewusstlos_input = input(f"Ist {name} zu Beginn bewusstlos? (ja/nein): ").lower()
     ist_bewusstlos = True if bewusstlos_input == "ja" else False    
 
+    # Waffen
+    waffen = []
+    if use_ammo:
+        while True:
+            waffe_hinzufügen = input("Waffe hinzufügen? (ja/nein): ").lower()
+            if waffe_hinzufügen != "ja":
+                break
+            waffen.append(waffe_eingeben())
+
     return {
         "name": name,
         "lebenspunkte": lebenspunkte,
@@ -72,9 +91,49 @@ def charakter_eingeben(team_name, break_armor):
         "max_ignorierte_augenpaare": max_ignorierte_augenpaare,
         "handeln": handeln,
         "parade": parade,
+        "waffen": waffen,
         "ist_nsc": ist_nsc,
         "ist_bewusstlos": ist_bewusstlos,
         "ist_tot": False  # Neuer Status: Charakter lebt zu Beginn
+    }
+
+# Funktion zur Eingabe einer Waffe
+def waffe_eingeben():
+    name = input("Name der Waffe: ")
+    ort = input("Ort der Waffe (z.B. 'in der Hand', 'Rucksack'): ")
+    kaliber = input("Kaliber der Waffe: ")
+    schadensformel = input("Schadensformel (z.B. '3W10+2'): ")
+    lauf_kapazität = int(input("Maximale Kapazität Patronen im Lauf: "))
+    patronen_im_lauf = int(input("Anzahl der Patronen im Lauf: "))
+    
+    magazine = []
+    while True:
+        magazin_hinzufügen = input("Magazin hinzufügen? (ja/nein): ").lower()
+        if magazin_hinzufügen != "ja":
+            break
+        magazin_name = input("Name des Magazins: ")
+        magazin_ort = input("Ort des Magazins (z.B. 'in Waffe', 'Magazintasche'): ")
+        kaliber = input("Kaliber des Magazins: ")
+        kapazität = int(input("Kapazität des Magazins: "))
+        füllstand = int(input("Aktueller Füllstand: "))
+        nachladegeschwindigkeit = int(input("Nachladegeschwindigkeit (Züge): "))
+        magazine.append({
+            "name": magazin_name,
+            "ort": magazin_ort,
+            "kaliber": kaliber,
+            "kapazität": kapazität,
+            "füllstand": füllstand,
+            "nachladegeschwindigkeit": nachladegeschwindigkeit
+        })
+    
+    return {
+        "name": name,
+        "ort": ort,
+        "kaliber": kaliber,
+        "schadensformel": schadensformel,
+        "lauf_kapazität": lauf_kapazität,
+        "patronen_im_lauf": patronen_im_lauf,
+        "magazine": magazine
     }
 
 # Funktion zur Eingabe eines Teams
@@ -83,7 +142,7 @@ def team_eingeben(team_nummer):
     print(f"Team '{team_name}' wird erstellt:")
     team = {"name": team_name, "charaktere": []}
     while True:
-        team["charaktere"].append(charakter_eingeben(team_name, break_armor))
+        team["charaktere"].append(charakter_eingeben(team_name, break_armor, use_armor, use_ammo))
         noch_einer = input("Weiteren Charakter für dieses Team hinzufügen? (ja/nein): ").lower()
         if noch_einer != "ja":
             break
@@ -95,7 +154,7 @@ def zusätzliche_charaktere_eingeben():
         print(f"\nTeam '{team['name']}':")
         zusatz = input("Möchtest du einen weiteren Charakter zu diesem Team hinzufügen? (ja/nein): ").lower()
         while zusatz == "ja":
-            team["charaktere"].append(charakter_eingeben(team["name"], break_armor))
+            team["charaktere"].append(charakter_eingeben(team["name"], break_armor, use_armor, use_ammo))
             zusatz = input("Möchtest du einen weiteren Charakter zu diesem Team hinzufügen? (ja/nein): ").lower()
 
 # Funktion für die Initiative-Runde mit Rückgabe der Zugreihenfolge und Überraschten
@@ -454,20 +513,26 @@ def kampf_runden(zugreihenfolge, überraschte_charaktere, break_armor, damage_ty
                 logging.info(f"Lebenspunkte von {verteidiger['name']} Zu Beginn: {verteidiger['lebenspunkte']}")
                 logging.info(f"Rüstungszustand von {verteidiger['name']} Zu Beginn: {verteidiger['rustungszustand']}")
                 # Rüstungszustand mildern bei kritischem Erfolg
-                if ergebnis == "kritischer Erfolg" and break_armor:
+                if ergebnis == "kritischer Erfolg" and use_armor and break_armor:
                     verteidiger["rustungszustand"] = max(0, verteidiger["rustungszustand"] - 1)
                     logging.info(f"Die Rüstung von {verteidiger['name']} wurde beschädigt! Neuer Rüstungszustand: {verteidiger['rustungszustand']}")
                 # Schaden um Rüstungszustand mildern
-                rustungswert = verteidiger["rustungswert"]
-                rustungszustand = verteidiger["rustungszustand"]
-                max_ignorierte = verteidiger["max_ignorierte_augenpaare"]
-                
-                ignorierte_würfel = [w for w in schadenswürfel if w <= rustungszustand][:max_ignorierte]
-                effektiver_schaden = sum(w for w in schadenswürfel if w not in ignorierte_würfel) + schadensbonus
+                if use_armor:
+                    rustungswert = verteidiger["rustungswert"]
+                    rustungszustand = verteidiger["rustungszustand"]
+                    max_ignorierte = verteidiger["max_ignorierte_augenpaare"]
+                    
+                    ignorierte_würfel = [w for w in schadenswürfel if w <= rustungszustand][:max_ignorierte]
+                    effektiver_schaden = sum(w for w in schadenswürfel if w not in ignorierte_würfel) + schadensbonus
+                # außer bei Rüstungsmodus aus
+                else:
+                    effektiver_schaden = base_schaden
+                    ignorierte_würfel = []
                 finaler_schaden = int(effektiver_schaden * schaden_faktor)
                 verteidiger["lebenspunkte"] -= finaler_schaden
                 logging.info(f"{verteidiger['name']} hat {verteidiger['lebenspunkte']} Lebenspunkte am Zugende.")
-                logging.info(f"{verteidiger['name']} hat {verteidiger['rustungszustand']} Rüstungszustand am Zugende.")
+                if use_armor and break_armor:
+                    logging.info(f"{verteidiger['name']} hat {verteidiger['rustungszustand']} Rüstungszustand am Zugende.")
 
                 # Überprüfung der Bewusstlosigkeit
                 if verteidiger["lebenspunkte"] < 10 or finaler_schaden > 60:
@@ -490,12 +555,14 @@ def kampf_runden(zugreihenfolge, überraschte_charaktere, break_armor, damage_ty
                 logging.info(f"{char_name} verursacht {finaler_schaden} Schaden an {ziel_name} ({treffer_art}):")
                 logging.info(f"  Schadensformel: {schadensformel}")
                 logging.info(f"  Würfel: {schadenswürfel}")
-                logging.info(f"  Ignorierte Würfel (Rüstungswert {rustungswert}, max {max_ignorierte}): {ignorierte_würfel}")
+                if use_armor:
+                    logging.info(f"  Ignorierte Würfel (Rüstungswert {rustungswert}, max {max_ignorierte}): {ignorierte_würfel}")
                 logging.info(f"  Effektiver Schaden vor Trefferfaktor: {sum([w for w in schadenswürfel if w not in ignorierte_würfel])} + {schadensbonus} = {effektiver_schaden}")
                 logging.info(f"  Trefferfaktor ({treffer_art}, ×{schaden_faktor}): {effektiver_schaden} * {schaden_faktor} = {effektiver_schaden * schaden_faktor:.2f}")
                 logging.info(f"  Finaler Schaden: {finaler_schaden} (gerundet)")
                 logging.info(f"  Lebenspunkte von {ziel_name} am Zugende: {verteidiger['lebenspunkte']}")
-                logging.info(f"  Rüstungszustand von {ziel_name} am Zugende: {verteidiger['rustungszustand']}")
+                if use_armor and break_armor:
+                    logging.info(f"  Rüstungszustand von {ziel_name} am Zugende: {verteidiger['rustungszustand']}")
                 logging.info(f"  Bewusstlos: { 'Ja' if verteidiger['ist_bewusstlos'] else 'Nein' }")
                 logging.info(f"  Tot: { 'Ja' if verteidiger['ist_tot'] else 'Nein' }")
 
@@ -534,11 +601,13 @@ if not input_file and not output_file:
     print("         Mit '-o <Dateipfad>' kannst du die Teams in eine Datei speichern.")
 
 args = parse_arguments()
+use_armor = args.armor
 break_armor = args.break_armor
 damage_type = args.damage_type
 input_file = args.input_file
 output_file = args.output_file
 result_file = args.result_file
+use_ammo = args.ammo
 setup_logging(args.log_file)
 logging.info("Programm gestartet.")
 
@@ -559,8 +628,12 @@ if input_file:
             for char in team["charaktere"]:
                 logging.info(f"  Name: {char['name']}")
                 logging.info(f"  Lebenspunkte: {char['lebenspunkte']}")
-                logging.info(f"  Rüstungswert: {char['rustungswert']}")
-                logging.info(f"  Max. ignorierte Augenpaare: {char['max_ignorierte_augenpaare']}")
+                if use_armor:
+                    logging.info(f"  Rüstungswert: {char['rustungswert']}")
+                    logging.info(f"  Max. ignorierte Augenpaare: {char['max_ignorierte_augenpaare']}")
+                    logging.info(f"  Rüstungszustand: {char['rustungszustand']}")
+                if use_ammo:
+                    logging.info(f"  Waffen: {char['waffen']}")
                 logging.info(f"  Handeln: {char['handeln']}")
                 logging.info(f"  Parade: {char['parade']}")
                 logging.info(f"  NSC: {'Ja' if char['ist_nsc'] else 'Nein'}")
@@ -589,8 +662,10 @@ if not input_file:
         for char in team["charaktere"]:
             logging.info(f"  Name: {char['name']}")
             logging.info(f"  Lebenspunkte: {char['lebenspunkte']}")
-            logging.info(f"  Rüstungswert: {char['rustungswert']}")
-            logging.info(f"  Max. ignorierte Augenpaare: {char['max_ignorierte_augenpaare']}")
+            if use_armor:
+                logging.info(f"  Rüstungswert: {char['rustungswert']}")
+                logging.info(f"  Rüstungszustand: {char['rustungszustand']}")
+                logging.info(f"  Max. ignorierte Augenpaare: {char['max_ignorierte_augenpaare']}")
             logging.info(f"  Handeln: {char['handeln']}")
             logging.info(f"  Parade: {char['parade']}")
             logging.info(f"  NSC: {'Ja' if char['ist_nsc'] else 'Nein'}")

@@ -1,0 +1,199 @@
+[
+    {
+        "name": "Überlebende",
+        "charaktere": [
+            {
+                "name": "Amber",
+                "lebenspunkte": 100,
+                "rustungswert": 4,
+                "rustungszustand": 4,
+                "max_ignorierte_augenpaare": 3,
+                "handeln": 4,
+                "parade": 4,
+                "waffen": [
+                    {
+                        "name": "Pistole 1",
+                        "ort": "in der Hand",
+                        "kaliber": "9x9mm",
+                        "schadensformel": "3W10+2",
+                        "lauf_kapazität": 1,
+                        "patronen_im_lauf": 1,
+                        "magazine": [
+                            {
+                                "name": "Magazin 1",
+                                "ort": "in Pistole 1",
+                                "kaliber": "9x9mm",
+                                "kapazität": 15,
+                                "füllstand": 14,
+                                "nachladegeschwindigkeit": 0
+                            },
+                            {
+                                "name": "Magazin 2",
+                                "ort": "Magazintasche 1",
+                                "kaliber": "9x9mm",
+                                "kapazität": 15,
+                                "füllstand": 15,
+                                "nachladegeschwindigkeit": 0
+                            }
+                        ]
+                    }
+                ],
+                "ist_nsc": false,
+                "ist_bewusstlos": false,
+                "ist_tot": false
+            },
+            {
+                "name": "Charlotte",
+                "lebenspunkte": 100,
+                "rustungswert": 1,
+                "rustungszustand": 1,
+                "max_ignorierte_augenpaare": 1,
+                "handeln": 4,
+                "parade": 4,
+                "waffen": [],
+                "ist_nsc": false,
+                "ist_bewusstlos": false,
+                "ist_tot": false
+            },
+            {
+                "name": "Dr. Reiner Hengst",
+                "lebenspunkte": 100,
+                "rustungswert": 0,
+                "rustungszustand": 0,
+                "max_ignorierte_augenpaare": 0,
+                "handeln": 3,
+                "parade": 3,
+                "waffen": [],
+                "ist_nsc": false,
+                "ist_bewusstlos": false,
+                "ist_tot": false
+            },
+            {
+                "name": "Maya",
+                "lebenspunkte": 100,
+                "rustungswert": 4,
+                "rustungszustand": 4,
+                "max_ignorierte_augenpaare": 4,
+                "handeln": 4,
+                "parade": 4,
+                "waffen": [
+                    {
+                        "name": "Sturmgewehr G36 1",
+                        "ort": "in der Hand",
+                        "kaliber": "5,56x45mm",
+                        "schadensformel": "4W10+5",
+                        "lauf_kapazität": 1,
+                        "patronen_im_lauf": 1,
+                        "magazine": [
+                            {
+                                "name": "Magazin 1",
+                                "ort": "in Waffe",
+                                "kaliber": "5,56x45mm",
+                                "kapazität": 30,
+                                "füllstand": 29,
+                                "nachladegeschwindigkeit": 0
+                            }
+                        ]
+                    }
+                ],
+                "ist_nsc": false,
+                "ist_bewusstlos": false,
+                "ist_tot": false
+            }
+        ]
+    },
+    {
+        "name": "Soldaten",
+        "charaktere": [
+            {
+                "name": "Soldat 1",
+                "lebenspunkte": 100,
+                "rustungswert": 3,
+                "rustungszustand": 3,
+                "max_ignorierte_augenpaare": 2,
+                "handeln": 3,
+                "parade": 3,
+                "waffen": [
+                    {
+                        "name": "Gewehr G36 2",
+                        "ort": "in der Hand",
+                        "kaliber": "5,56x45mm",
+                        "schadensformel": "4W10+2",
+                        "lauf_kapazität": 1,
+                        "patronen_im_lauf": 1,
+                        "magazine": [
+                            {
+                                "name": "Magazin G36 2",
+                                "ort": "Gewehr G36 2",
+                                "kaliber": "5,56x45mm",
+                                "kapazität": 30,
+                                "füllstand": 29,
+                                "nachladegeschwindigkeit": 0
+                            }
+                        ]
+                    }
+                ],
+                "ist_nsc": true,
+                "ist_bewusstlos": false,
+                "ist_tot": false
+            },
+            {
+                "name": "Soldat 2",
+                "lebenspunkte": 100,
+                "rustungswert": 3,
+                "rustungszustand": 3,
+                "max_ignorierte_augenpaare": 2,
+                "handeln": 2,
+                "parade": 2,
+                "waffen": [],
+                "ist_nsc": true,
+                "ist_bewusstlos": true,
+                "ist_tot": false
+            }
+        ]
+    },
+    {
+        "name": "Zombies",
+        "charaktere": [
+            {
+                "name": "Zombie 1",
+                "lebenspunkte": 100,
+                "rustungswert": 0,
+                "rustungszustand": 0,
+                "max_ignorierte_augenpaare": 0,
+                "handeln": 3,
+                "parade": 3,
+                "waffen": [],
+                "ist_nsc": true,
+                "ist_bewusstlos": false,
+                "ist_tot": false
+            },
+            {
+                "name": "Zombie 2",
+                "lebenspunkte": 100,
+                "rustungswert": 0,
+                "rustungszustand": 0,
+                "max_ignorierte_augenpaare": 0,
+                "handeln": 2,
+                "parade": 2,
+                "waffen": [],
+                "ist_nsc": true,
+                "ist_bewusstlos": false,
+                "ist_tot": false
+            },
+            {
+                "name": "Zombie 3",
+                "lebenspunkte": 100,
+                "rustungswert": 0,
+                "rustungszustand": 0,
+                "max_ignorierte_augenpaare": 0,
+                "handeln": 2,
+                "parade": 2,
+                "waffen": [],
+                "ist_nsc": true,
+                "ist_bewusstlos": false,
+                "ist_tot": false
+            }
+        ]
+    }
+]

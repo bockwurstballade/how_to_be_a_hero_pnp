@@ -45,8 +45,10 @@ python3 how_to_be_a_hero_fight.py [options]
 * -o <output_file>: Save teams to a JSON file after character modifications (does not store the end result of the fight).
 * -z <result_file>: After each player turn, saves the current status of all characters into a result file. This is useful if the program gets aborted for some reason and you want to continue from where you left off.
 * -l <log_file>: Each important message shown on the console is also logged into a text file.
-* -r or --break-armor: Enable armor degradation on critical hits.
+* -a or --armor: Enable considering armor value for damage reduction.
+* -r or --break-armor: Enable armor degradation on critical hits (only works in combination with -a).
 * -d or --damage-type: Enable damage type based on difference between attribute value and dice roll
+* -y or --ammo: Enable handling of ammunition in weapons (currently only stores metadata, does not handle reloading or calculation)
 
 ### Examples
 
@@ -59,13 +61,13 @@ python3 how_to_be_a_hero_fight.py -i teams.json -r
 to additionally add new characters manually, and save the new json file to teams_new.json, use
 
 ```bash
-python3 how_to_be_a_hero_fight.py -i teams.json -o teams_new.json -r
+python3 how_to_be_a_hero_fight.py -i teams.json -o teams_new.json -ar
 ```
 
-To activate both armor degeneration and damage factors, log all events to an exteranl log file and write out the current state to a JSON after every turn, use
+To activate ammo handling, armor degeneration and damage factors, log all events to an exteranl log file and write out the current state to a JSON after every turn, use
 
 ```bash
-python3 how_to_be_a_hero_fight.py -i teams.json -z current-state.json -l fight.log -rd
+python3 how_to_be_a_hero_fight.py -i teams.json -z current-state.json -l fight.log -adry
 ```
 
 ## Using the program
